@@ -4,10 +4,6 @@
 
 ---
 
-![PowerShell-QR-Generator](img/PowerShell-QR-Generator.png)
-
----
-
 A PowerShell Core (7+) function that generates QR code images from text strings or raw byte arrays and opens the result in the system image viewer.
 
 ---
@@ -147,12 +143,59 @@ ECC         Max bytes         (spec)   ok    Max chars         (spec)   ok
 
 ---
 
-## Author
+## Important Note
 
-Guillaume Plante
+The QRCoder 2-arg overload auto-detects mode based on content:
+
+- Pure digits → Numeric
+- `A-Z 0-9 $%*+-./: space` (uppercase only) → Alphanumeric  
+- **Anything else** → Byte mode (2,953 cap)
+
+Example: a test string `$strtest = [string]::new('t', 4295)` uses lowercase `'t'` . And the lowercase letters are **not** in the alphanumeric QR charset of the encoder, so QRCoder falls through to byte mode.
+
+**Quick proof**
+
+
+*FAILS at 2954+ — lowercase forces byte mode (cap 2953)*
+```powershell
+$strtest = [string]::new('a', 2954)
+Invoke-GenerateQR -Text $strtest -ErrorCorrection L
+```
+
+*WORKS up to 4296 — uppercase only, QRCoder picks alphanumeric mode*
+
+```powershell
+$strtest = [string]::new('Z', 4295)
+Invoke-GenerateQR -Text $strtest -ErrorCorrection L
+```
+
+**So we have a limit by making the validation **content-aware**, same as QRCoder which is like:**
+
+```powershell
+# Determine which QR encoding mode QRCoder will actually use
+$isNumeric      = $Text -cmatch '^[0-9]+$'
+$isAlphanumeric = $Text -cmatch '^[0-9A-Z $%*+\-./:]+$'
+
+$effectiveLimit = if ($isNumeric) {
+    @{ L = 7089; M = 5596; Q = 3993; H = 3057 }[$ErrorCorrection]
+} elseif ($isAlphanumeric) {
+    $limitChars   # your existing $qrMaxCharacters table
+} else {
+    $limitBytes   # byte mode — use the byte cap
+}
+
+$measureLength = if ($isNumeric -or $isAlphanumeric) {
+    $Text.Length
+} else {
+    $enc.GetByteCount($Text)
+}
+
+if ($measureLength -gt $effectiveLimit) {
+    # throw here
+}
+```
+
 
 ---
 
-## License
-
-MIT
+![Invoke-GenerateQR 'https://github.com/arsscriptum/PowerShell.QR.Generator'](img/PowerShell-QR-Generator.png)
