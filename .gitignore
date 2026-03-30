@@ -3,9 +3,12 @@
 *.aps
 *.db
 *.opendb
+*.csv
+*.pspp
+
 .vs/
 .vs/**
-*.csv
+
 bin/
 bin/**
 tmp/
