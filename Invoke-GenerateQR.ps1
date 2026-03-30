@@ -28,6 +28,10 @@
     Suppress launching the image viewer. The output path is still written to
     the pipeline.
 
+.PARAMETER TestLimits
+    Suppress arguments length validation so that we can test the size limits
+    See Test-QRMaxSize.ps1 script.
+
 .EXAMPLE
     $TestStr = @"
 Guillaume Plante
@@ -66,8 +70,47 @@ function Invoke-GenerateQR {
         [string] $ErrorCorrection = 'M',
 
         [Parameter()]
-        [switch] $NoDisplay
+        [switch] $NoDisplay,
+
+        [Parameter()]
+        [switch] $TestLimits
     )
+    $AllowOverflow = $TestLimits -eq $True
+    # Max binary bytes per QR spec v40 for each ECC level
+    $qrMaxBytes = @{ L = 2953; M = 2331; Q = 1663; H = 1273 }
+    $limit      = $qrMaxBytes[$ErrorCorrection]
+    if($AllowOverflow -eq $False){
+        if ($PSCmdlet.ParameterSetName -eq 'Text') {
+            $byteCount = [System.Text.Encoding]::UTF8.GetByteCount($Text)
+            if ($byteCount -gt $limit) {
+                
+                [System.Management.Automation.ErrorRecord]$ErrorEntry = [System.Management.Automation.ErrorRecord]::new(
+                        [System.ArgumentException]::new(
+                            "Text encodes to $byteCount UTF-8 bytes. Max for ECC '$ErrorCorrection' is $limit bytes."),
+                        'QRTextTooLong',
+                        [System.Management.Automation.ErrorCategory]::InvalidArgument,
+                        $Text
+                    )
+          
+                 throw $ErrorEntry
+                              
+                
+            }
+        } else {
+            if ($Bytes.Length -gt $limit) {
+                
+                    [System.Management.Automation.ErrorRecord]$ErrorEntry = [System.Management.Automation.ErrorRecord]::new(
+                        [System.ArgumentException]::new(
+                            "Byte array is $($Bytes.Length) bytes. Max for ECC '$ErrorCorrection' is $limit bytes."),
+                        'QRByteArrayTooLong',
+                        [System.Management.Automation.ErrorCategory]::InvalidArgument,
+                        $Bytes
+                    )
+        
+                    throw $ErrorEntry
+            }
+        }
+   }
 
     # ── 1. Resolve / create output path ──────────────────────────────────────
     if (-not $OutputPath) {

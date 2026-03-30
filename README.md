@@ -2,6 +2,12 @@
 
 ![Project icon](img/invoke_generateqr_project_icon_256.png)
 
+---
+
+![PowerShell-QR-Generator](img/PowerShell-QR-Generator.png)
+
+---
+
 A PowerShell Core (7+) function that generates QR code images from text strings or raw byte arrays and opens the result in the system image viewer.
 
 ---
@@ -9,7 +15,7 @@ A PowerShell Core (7+) function that generates QR code images from text strings 
 ## Requirements
 
 - PowerShell 7.0 or later
-- .NET SDK (`dotnet` CLI) — required on first run only to pull the [QRCoder](https://github.com/codebude/QRCoder) NuGet package
+- .NET SDK (`dotnet` CLI) — required on first run only to pull the [QRCoder](https://github.com/arsscriptum/PowerShell.QR.Generator) NuGet package
 - Internet access on first run (NuGet restore); fully offline afterward
 
 ---
@@ -30,7 +36,7 @@ If you prefer a fully offline install, drop `QRCoder.dll` (netstandard2.0 build)
 
 ## Syntax
 
-```
+```powershell
 Invoke-GenerateQR -Text <string>
                   [-OutputPath <string>]
                   [-PixelsPerModule <int>]
@@ -122,6 +128,28 @@ Write-Host "Saved to: $path"
 | Linux | first found among `eog`, `feh`, `display`, `xdg-open` |
 
 If no viewer is found on Linux the function emits a warning and still writes the file.
+
+---
+
+## Tests Lengths
+
+[![Test preview](img/test_small.png "Click to view Results")](img/test.png)
+
+```bash
+ECC         Max bytes         (spec)   ok    Max chars         (spec)   ok
+---         ---------         ------  ---    ---------         ------  ---
+  L              2953         (2953)   ✓         4296         (4296)    ✓
+  M              2331         (2331)   ✓         3391         (3391)    ✓
+  Q              1663         (1663)   ✓         2420         (2420)    ✓
+  H              1273         (1273)   ✓         1852         (1852)    ✓
+ 
+```
+
+---
+
+## Author
+
+Guillaume Plante
 
 ---
 
